@@ -25,10 +25,9 @@ async function run() {
         const db = client.db('carManagement');
         const carsCollection = db.collection('cars');
 
-        app.post('/cars', async (req, res) => {
-            const newCar = req.body;
-            const result = await carsCollection.insertOne(newCar);
-            res.send(result);
+        app.get('/featuredCars', async (req, res) => {
+            const cars = await carsCollection.find().sort({ createdAt: -1}).limit(6).toArray();
+            res.send(cars);
         })
 
         await client.db("admin").command({ ping: 1 });
