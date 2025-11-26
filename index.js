@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
 const app = express();
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const port = process.env.PORT || 5000;
@@ -24,9 +25,52 @@ async function run() {
 
         const db = client.db('carManagement');
         const carsCollection = db.collection('cars');
+        const usersCollection = db.collection('users');
+
+        app.post('/register', async (req, res) => {
+            try {
+                const { name, email, password } = req.body;
+                const result = await usersCollection.findOne({ email });
+
+                if (result) {
+                    return res.send({ success: false, message: 'User already exists' });
+                }
+
+                const hashedPassword = await bcrypt.hash(password, 10);
+
+                const newUser = {
+                    name,
+                    email,
+                    password: hashedPassword
+                }
+
+                await usersCollection.insertOne(newUser);
+                res.send({ success: true, message: 'User registered successfully' });
+            } catch (error) {
+                res.send({ success: false, message: 'Registration failed' });
+            }
+
+        })
+
+        app.post('/login', async (req, res) => {
+            try {
+                const { email, password } = req.body;
+                const user = await usersCollection.findOne({ email });
+                if (!user) {
+                    return res.send({ success: false, message: 'User not found' });
+                }
+                const isPasswordValid = await bcrypt.compare(password, user.password);
+                if (!isPasswordValid) {
+                    return res.send({ success: false, message: 'Invalid password' });
+                }
+                res.send({ success: true, message: 'Login successful' });
+            } catch (error) {
+                res.send({ success: false, message: 'Login failled' });
+            }
+        })
 
         app.get('/featuredCars', async (req, res) => {
-            const cars = await carsCollection.find().sort({ createdAt: -1}).limit(6).toArray();
+            const cars = await carsCollection.find().sort({ createdAt: -1 }).limit(6).toArray();
             res.send(cars);
         })
 
