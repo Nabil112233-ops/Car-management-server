@@ -29,6 +29,7 @@ async function run() {
 
         app.post('/register', async (req, res) => {
             try {
+                console.log(req.body); 
                 const { name, email, password } = req.body;
                 const result = await usersCollection.findOne({ email });
 
@@ -36,7 +37,10 @@ async function run() {
                     return res.send({ success: false, message: 'User already exists' });
                 }
 
-                const hashedPassword = await bcrypt.hash(password, 10);
+                let hashedPassword = null;
+                if (password) {
+                    const hashedPassword = await bcrypt.hash(password, 10);
+                }
 
                 const newUser = {
                     name,
@@ -47,11 +51,11 @@ async function run() {
                 await usersCollection.insertOne(newUser);
                 res.send({ success: true, message: 'User registered successfully' });
             } catch (error) {
+                console.log(error);
                 res.send({ success: false, message: 'Registration failed' });
             }
 
         })
-
         app.post('/login', async (req, res) => {
             try {
                 const { email, password } = req.body;
