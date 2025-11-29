@@ -26,6 +26,7 @@ async function run() {
         const db = client.db('carManagement');
         const carsCollection = db.collection('cars');
         const usersCollection = db.collection('users');
+        const bookingsCollection = db.collection('bookings');
 
         app.post('/register', async (req, res) => {
             try {
@@ -79,6 +80,18 @@ async function run() {
             res.send(result);
         })
 
+        app.post('/car-booking', async (req, res) => {
+            const booking = req.body;
+            const result = await bookingsCollection.insertOne(booking);
+            res.send(result);
+        })
+
+        app.get('/my-bookings/:email', async (req, res) => {
+            const email = req.params.email;
+            const bookings = await bookingsCollection.find({ bookedBy: email }).toArray();
+            res.send(bookings)
+        })
+
         app.get('/my-listings', async (req, res) => {
             const providerEmail = req.query.providerEmail;
             const cars = await carsCollection.find({ providerEmail }).sort({ _id: -1 }).toArray();
@@ -99,6 +112,32 @@ async function run() {
         app.get('/browse-cars', async (req, res) => {
             const cars = await carsCollection.find().toArray();
             res.send(cars);
+        })
+
+        app.patch('/update-status/:id', async (req, res) => {
+            const id = req.params.id;
+            const status = req.body.status;
+            const result = await carsCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: { status: status } }
+            )
+            res.send(result);
+        })
+
+        app.put('/update-car/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedCar = req.body || {};
+            const result = await carsCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: updatedCar }
+            )
+            res.send(result);
+        })
+
+        app.delete('/delete-car/:id', async (req, res) => {
+            const id = req.params.id;
+            const result = await carsCollection.deleteOne({ _id: new ObjectId(id) });
+            res.send(result);
         })
 
         await client.db("admin").command({ ping: 1 });
