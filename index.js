@@ -79,6 +79,12 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/my-listings', async (req, res) => {
+            const providerEmail = req.query.providerEmail;
+            const cars = await carsCollection.find({ providerEmail }).sort({ _id: -1 }).toArray();
+            res.send(cars)
+        })
+
         app.get('/car/:id', async (req, res) => {
             const id = req.params.id;
             const car = await carsCollection.findOne({ _id: new ObjectId(id) });
