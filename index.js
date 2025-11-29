@@ -73,6 +73,12 @@ async function run() {
             }
         })
 
+        app.post('/add-car', async (req, res) => {
+            const car = req.body;
+            const result = await carsCollection.insertOne(car);
+            res.send(result);
+        })
+
         app.get('/car/:id', async (req, res) => {
             const id = req.params.id;
             const car = await carsCollection.findOne({ _id: new ObjectId(id) });
