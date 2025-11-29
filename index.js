@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const app = express();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 
@@ -29,7 +29,7 @@ async function run() {
 
         app.post('/register', async (req, res) => {
             try {
-                console.log(req.body); 
+                console.log(req.body);
                 const { name, email, password } = req.body;
                 const result = await usersCollection.findOne({ email });
 
@@ -71,6 +71,12 @@ async function run() {
             } catch (error) {
                 res.send({ success: false, message: 'Login failled' });
             }
+        })
+
+        app.get('/car/:id', async (req, res) => {
+            const id = req.params.id;
+            const car = await carsCollection.findOne({ _id: new ObjectId(id) });
+            res.send(car);
         })
 
         app.get('/featuredCars', async (req, res) => {
