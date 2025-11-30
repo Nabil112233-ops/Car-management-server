@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-    origin: 'https://tangerine-stardust-1fd0a1.netlify.app/'
+    origin: 'https://tangerine-stardust-1fd0a1.netlify.app'
 }));
 app.use(express.json());
 
