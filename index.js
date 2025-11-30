@@ -131,13 +131,13 @@ async function run() {
                 { _id: new ObjectId(id) },
                 { $set: updatedCar }
             )
-            res.send(result);
+            res.json(result);
         })
 
         app.delete('/delete-car/:id', async (req, res) => {
             const id = req.params.id;
             const result = await carsCollection.deleteOne({ _id: new ObjectId(id) });
-            res.send(result);
+            res.json(result);
         })
 
         await client.db("admin").command({ ping: 1 });
