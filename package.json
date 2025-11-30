@@ -4,7 +4,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "nodemon api/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -17,6 +17,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "mongodb": "^7.0.0",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "serverless-http": "^4.0.0"
   }
 }
