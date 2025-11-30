@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+const port = process.env.PORT || 5000;
 
 // --- Middleware ---
 app.use(cors({
@@ -247,6 +248,11 @@ app.get("/my-bookings/:email", async (req, res) => {
         res.status(500).json({ error: err.message }); 
     }
 });
+
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+})
 
 
 // Export as Serverless Function
