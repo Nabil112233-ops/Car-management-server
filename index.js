@@ -10,9 +10,23 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
+
+const allowedOrigins = [
+    'http://localhost:5173', // Dev server
+    'https://tangerine-stardust-1fd0a1.netlify.app' // Production
+];
+
 app.use(cors({
-    origin: 'https://tangerine-stardust-1fd0a1.netlify.app'
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true); // Postman বা direct call
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    }
 }));
+
 app.use(express.json());
 
 // MongoDB Connection
