@@ -13,7 +13,7 @@ const port = process.env.PORT || 5000;
 // --- Middleware ---
 app.use(cors({
     origin: [
-        "http://localhost:5173",
+        "http://localhost:5174",
         "https://tangerine-stardust-1fd0a1.netlify.app"
     ],
     credentials: true
@@ -58,13 +58,21 @@ app.get("/", (req, res) => {
 app.post("/register", async (req, res) => {
     try {
         const { name, email, password } = req.body;
+        console.log("DEBUG: Registration Request Body:", req.body);
 
         const exists = await usersCollection.findOne({ email });
         if (exists) {
             return res.status(400).json({ error: "User already exists" });
         }
 
-        const hashed = await bcrypt.hash(password, 10);
+        let hashed = null;
+
+        if (password) {
+
+            hashed = await bcrypt.hash(password, 10);
+        } else {
+            hashed = null;
+        }
 
         const result = await usersCollection.insertOne({
             name,
@@ -85,11 +93,30 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log("DEBUG: Login Request Body:", req.body);
 
         const user = await usersCollection.findOne({ email });
+        console.log("DEBUG: Found User:", user);
         if (!user) return res.status(400).json({ error: "Invalid email or password" });
 
+        if (password) { 
+            if (!user.password) {
+                return res.status(400).json({ error: "This is a social login account. Please use Google." });
+            }}
+
+        if (!password) {
+            return res.json({
+                message: "Google Login successful",
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email
+                }
+            });
+        }
+
         const matched = await bcrypt.compare(password, user.password);
+        console.log("DEBUG: Password Match Status:", matched); 
         if (!matched) return res.status(400).json({ error: "Invalid email or password" });
 
         res.json({
@@ -102,6 +129,7 @@ app.post("/login", async (req, res) => {
         });
 
     } catch (err) {
+        console.error("Login Fatal Error:", err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -134,13 +162,19 @@ app.get("/browse-cars", async (req, res) => {
 });
 
 // My Listings
-app.get('/my-listings', async (req, res) => {
+app.get('/my-listings/:email', async (req, res) => {
     try {
-        const providerEmail = req.query.providerEmail;
-        const cars = await carsCollection.find({ providerEmail }).sort({ _id: -1 }).toArray();
+        let email = req.params.email;
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email parameter missing' });
+        }
+        email = email.toLowerCase()
+        // console.log("DEBUG: Querying listings for email:", email);
+        const cars = await carsCollection.find({ providerEmail : email }).sort({ _id: -1 }).toArray();
+        // console.log(`DEBUG: Found ${cars.length} cars for ${email}`);
         res.json(cars);
     } catch (error) {
-        console.error(error);
+        // console.error("FATAL ERROR IN MY-LISTINGS:", error);
         res.status(500).json({ success: false, message: 'Fetching listings failed' });
     }
 });
@@ -200,7 +234,15 @@ app.delete("/delete-car/:id", async (req, res) => {
     try {
         const id = req.params.id;
 
-        await carsCollection.deleteOne({ _id: new ObjectId(id) });
+        if (!ObjectId.isValid(id)) {
+            return res.status(400).json({ error: "Invalid Car ID format" });
+        }
+
+        const result = await carsCollection.deleteOne({ _id: new ObjectId(id) });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ error: "Car not found or already deleted" });
+        }
 
         res.json({ message: "Car deleted successfully" });
 
@@ -241,13 +283,25 @@ app.get("/my-bookings/:email", async (req, res) => {
     try {
         const email = req.params.email;
 
-        const bookings = await bookingsCollection.find({ userEmail: email }).toArray();
+        const bookings = await bookingsCollection.find({ bookedBy: email }).toArray();
         res.json(bookings);
 
     } catch (err) {
-        res.status(500).json({ error: err.message }); 
+        res.status(500).json({ error: err.message });
     }
 });
+
+app.post('/car-booking', async (req, res) => {
+    try {
+        const booking = req.body;
+        const result = await bookingsCollection.insertOne(booking);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Booking failed' });
+    }
+});
+
 
 
 app.listen(port, () => {
